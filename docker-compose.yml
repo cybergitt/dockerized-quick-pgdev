@@ -1,0 +1,55 @@
+version: '3.7'
+
+services:
+  postgresql:
+    image: postgres:12.1
+    container_name: postgres_container
+    hostname: postgres
+    restart: always
+    build: 
+      context: ./persistents/postgres
+    env_file: 
+    - .env
+    ports: 
+    # <Port exposed> : < POSTGRES Port running inside container>
+    - '5432:5432'
+    expose:
+    # Opens port 5432 on the container
+    - '5432'
+    # Where our data will be persisted
+    volumes:
+    - ./persistents/postgres/postgres.conf:/etc/postgresql/postgresql.conf
+    - ./persistents/postgres/.data:/var/lib/postgresql/data
+#    - ./postgres-initdb.sh:/docker-entrypoint-initdb.d/init.sh
+#    - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+#    - /etc/localtime:/etc/localtime:ro
+#    - /etc/timezone:/etc/timezone:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    mem_limit: 4g
+    cpus: 2
+#    user: 1001:1001
+    networks: 
+    - postgres
+
+  pgadmin: 
+    depends_on: 
+    # This app depend on / linked to service <db>
+    - postgresql
+    image: dpage/pgadmin4:4.28
+    container_name: pgadmin_container
+    restart: unless-stopped
+    ports: 
+    - '8084:80'
+    env_file: 
+    - .env_pgadmin
+    volumes:
+    - ./persistents/postgres/.pgadmin-data:/var/lib/pgadmin
+    networks:
+    - postgres
+
+networks:
+  postgres:
+    driver: bridge
+# Names our volume
+volumes:
+  persistents:
